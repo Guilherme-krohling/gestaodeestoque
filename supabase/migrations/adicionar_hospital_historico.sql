@@ -1,0 +1,1 @@
+ALTER TABLE public.historico ADD COLUMN IF NOT EXISTS hospital text;

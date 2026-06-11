@@ -26,3 +26,6 @@ prisma/dev.db-journal
 #Arquivos do Sistema Operacional
 .DS_Store
 Thumbs.db
+
+# Pasta de Anotações Pessoais
+anotacoes/
