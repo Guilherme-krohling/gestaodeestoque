@@ -17,15 +17,10 @@ const errorMiddleware = createMiddleware().server(async ({ next }) => {
     }
 });
 
-// Inline equivalent of `attachSupabaseAuth`, but importing the supabase
-// client lazily inside the .client() callback so SSR never evaluates
-// `localStorage` at module scope.
-const attachSupabaseAuth = createMiddleware({ type: "function" }).client(
+const attachAuth = createMiddleware({ type: "function" }).client(
     async ({ next }) => {
         if (typeof window === "undefined") return next();
-        const { supabase } = await import("@/integrations/supabase/client");
-        const { data } = await supabase.auth.getSession();
-        const token = data.session?.access_token;
+        const token = localStorage.getItem("token");
         return next({
             headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
@@ -33,6 +28,6 @@ const attachSupabaseAuth = createMiddleware({ type: "function" }).client(
 );
 
 export const startInstance = createStart(() => ({
-    functionMiddleware: [attachSupabaseAuth],
+    functionMiddleware: [attachAuth],
     requestMiddleware: [errorMiddleware],
 }));

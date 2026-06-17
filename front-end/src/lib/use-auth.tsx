@@ -1,33 +1,29 @@
-import { useEffect, useState } from "react";
-import type { Session } from "@supabase/supabase-js";
-import { getSupabase } from "./supabase-browser";
+import { useState, useEffect } from 'react';
+import { api } from './api';
 
 export function useAuth() {
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+    const [session, setSession] = useState<{ user: any } | null>(null);
+    const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let mounted = true;
-    let unsub: (() => void) | undefined;
+    useEffect(() => {
+        const verify = async () => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                setSession(null);
+                setLoading(false);
+                return;
+            }
+            try {
+                const { data } = await api.get('/auth/me');
+                setSession({ user: data });
+            } catch (err) {
+                localStorage.removeItem('token');
+                setSession(null);
+            }
+            setLoading(false);
+        };
+        verify();
+    }, []);
 
-    (async () => {
-      const supabase = await getSupabase();
-      const { data } = await supabase.auth.getSession();
-      if (!mounted) return;
-      setSession(data.session);
-      setLoading(false);
-
-      const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
-        setSession(s);
-      });
-      unsub = () => sub.subscription.unsubscribe();
-    })();
-
-    return () => {
-      mounted = false;
-      unsub?.();
-    };
-  }, []);
-
-  return { session, loading };
+    return { session, loading };
 }

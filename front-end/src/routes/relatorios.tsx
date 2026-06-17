@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { getSupabase } from "@/lib/supabase-browser";
+import { api } from "@/lib/api";
 import { AppLayout } from "@/components/AppLayout";
 import { Card } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, PieChart, Pie, Cell } from "recharts";
@@ -11,8 +11,7 @@ function RelatoriosPage() {
     const { data: historico = [] } = useQuery({
         queryKey: ["historico-todo"],
         queryFn: async () => {
-            const supabase = await getSupabase();
-            const { data } = await supabase.from("historico").select("*").order("criado_em", { ascending: true }).limit(10000);
+            const { data } = await api.get("/historico");
             return data ?? [];
         },
     });

@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { getSupabase } from "@/lib/supabase-browser";
+import { api } from "@/lib/api";
 import { useAuth } from "@/lib/use-auth";
 import logoDogliotti from "@/assets/logo-dogliotti.png";
 
@@ -87,8 +87,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
                     <button
                         type="button"
                         onClick={async () => {
-                            const supabase = await getSupabase();
-                            await supabase.auth.signOut();
+                            await api.post('/auth/logout');
+                            localStorage.removeItem('token');
                             window.location.href = "/login";
                         }}
                         className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900"

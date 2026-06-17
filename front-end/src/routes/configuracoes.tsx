@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getSupabase } from "@/lib/supabase-browser";
+import { api } from "@/lib/api";
 import { AppLayout } from "@/components/AppLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,17 +36,15 @@ function ProcedimentosCard() {
     const { data: procs = [] } = useQuery({
         queryKey: ["procedimentos"],
         queryFn: async () => {
-            const supabase = await getSupabase();
-            return (await supabase.from("procedimentos").select("*").order("nome")).data ?? [];
+            const { data } = await api.get("/procedimentos");
+            return data ?? [];
         },
     });
 
     const add = useMutation({
         mutationFn: async () => {
             if (!novo.trim()) throw new Error("Nome obrigatório");
-            const supabase = await getSupabase();
-            const { error } = await supabase.from("procedimentos").insert({ nome: novo.trim() });
-            if (error) throw error;
+            await api.post("/procedimentos", { nome: novo.trim() });
         },
         onSuccess: () => { toast.success("Adicionado"); setNovo(""); qc.invalidateQueries({ queryKey: ["procedimentos"] }); },
         onError: (e: any) => toast.error(e.message),
@@ -54,9 +52,7 @@ function ProcedimentosCard() {
 
     const del = useMutation({
         mutationFn: async (id: string) => {
-            const supabase = await getSupabase();
-            const { error } = await supabase.from("procedimentos").delete().eq("id", id);
-            if (error) throw error;
+            await api.delete(`/procedimentos/${id}`);
         },
         onSuccess: () => { toast.success("Removido"); qc.invalidateQueries({ queryKey: ["procedimentos"] }); },
     });
@@ -91,17 +87,15 @@ function MateriaisCard() {
     const { data: mats = [] } = useQuery({
         queryKey: ["materiais-config"],
         queryFn: async () => {
-            const supabase = await getSupabase();
-            return (await supabase.from("materiais").select("*").order("nome")).data ?? [];
+            const { data } = await api.get("/materiais");
+            return data ?? [];
         },
     });
 
     const add = useMutation({
         mutationFn: async () => {
             if (!form.nome) throw new Error("Nome obrigatório");
-            const supabase = await getSupabase();
-            const { error } = await supabase.from("materiais").insert(form);
-            if (error) throw error;
+            await api.post("/materiais", form);
         },
         onSuccess: () => {
             toast.success("Material cadastrado");
@@ -114,9 +108,7 @@ function MateriaisCard() {
 
     const del = useMutation({
         mutationFn: async (id: string) => {
-            const supabase = await getSupabase();
-            const { error } = await supabase.from("materiais").delete().eq("id", id);
-            if (error) throw error;
+            await api.delete(`/materiais/${id}`);
         },
         onSuccess: () => { toast.success("Removido"); qc.invalidateQueries({ queryKey: ["materiais-config"] }); },
         onError: (e: any) => toast.error(e.message),

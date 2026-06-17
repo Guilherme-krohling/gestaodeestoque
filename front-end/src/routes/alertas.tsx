@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { getSupabase } from "@/lib/supabase-browser";
+import { api } from "@/lib/api";
 import { AppLayout } from "@/components/AppLayout";
 import { Card } from "@/components/ui/card";
 import { daysUntil, formatDate } from "@/lib/stock-utils";
@@ -11,8 +11,7 @@ function AlertasPage() {
     const { data: rows = [] } = useQuery({
         queryKey: ["alertas"],
         queryFn: async () => {
-            const supabase = await getSupabase();
-            const { data } = await supabase.from("estoque").select("*, materiais(*)");
+            const { data } = await api.get("/estoque");
             return data ?? [];
         },
     });
@@ -24,14 +23,14 @@ function AlertasPage() {
     // Agrupar por material (nome + tamanho) somando saldo de todos os lotes
     const grupos = new Map<string, { material: any; saldo: number; lotes: number }>();
     for (const r of rows as any[]) {
-        if (!r.materiais) continue;
+        if (!r.material) continue;
         const key = r.material_id;
         const g = grupos.get(key);
         if (g) {
             g.saldo += r.saldo_atual || 0;
             g.lotes += 1;
         } else {
-            grupos.set(key, { material: r.materiais, saldo: r.saldo_atual || 0, lotes: 1 });
+            grupos.set(key, { material: r.material, saldo: r.saldo_atual || 0, lotes: 1 });
         }
     }
     const abaixoMin = Array.from(grupos.values()).filter(
@@ -58,7 +57,7 @@ function AlertasPage() {
                                 return (
                                     <li key={r.id} className="py-3 flex justify-between items-start">
                                         <div>
-                                            <div className="font-medium">{r.materiais.nome}</div>
+                                            <div className="font-medium">{r.material.nome}</div>
                                             <div className="text-xs text-slate-500">Lote {r.lote} · Val. {formatDate(r.validade)} · Saldo {r.saldo_atual}</div>
                                         </div>
                                         <span className={`text-xs px-2 py-1 rounded ${d < 0 ? "bg-red-100 text-red-700" : d <= 50 ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>

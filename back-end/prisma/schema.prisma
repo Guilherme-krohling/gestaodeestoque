@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Material {
+  id                String      @id @default(uuid())
+  nome              String
+  referencia_cfn    String?
+  tamanho           String?
+  estoque_minimo    Int         @default(0)
+  fornecedor_padrao String?
+  unidade           String      @default("unidade")
+  criado_em         DateTime    @default(now())
+
+  estoques          Estoque[]
+  historicos        Historico[]
+  reposicoes        Reposicao[]
+
+  @@map("materiais")
+}
+
+model Estoque {
+  id                  String    @id @default(uuid())
+  material_id         String
+  lote                String
+  validade            DateTime?
+  data_contagem       DateTime? @default(now())
+  saldo_inicial       Int       @default(0)
+  entradas            Int       @default(0)
+  saidas              Int       @default(0)
+  saldo_atual         Int       @default(0)
+  ultima_movimentacao DateTime? @default(now())
+  criado_em           DateTime  @default(now())
+
+  material            Material  @relation(fields: [material_id], references: [id], onDelete: Cascade)
+
+  @@index([material_id])
+  @@index([validade])
+  @@map("estoque")
+}
+
+model Historico {
+  id             String    @id @default(uuid())
+  criado_em      DateTime  @default(now())
+  tipo           String
+  material_id    String?
+  material_nome  String?
+  referencia_cfn String?
+  tamanho        String?
+  lote           String?
+  validade       DateTime?
+  paciente       String?
+  convenio       String?
+  procedimento   String?
+  quantidade     Int       @default(0)
+
+  material       Material? @relation(fields: [material_id], references: [id], onDelete: SetNull)
+
+  @@index([criado_em])
+  @@index([tipo])
+  @@map("historico")
+}
+
+model Procedimento {
+  id        String   @id @default(uuid())
+  nome      String   @unique
+  criado_em DateTime @default(now())
+
+  @@map("procedimentos")
+}
+
+model Reposicao {
+  id            String    @id @default(uuid())
+  material_id   String?
+  material_nome String?
+  tamanho       String?
+  quantidade    Int       @default(0)
+  data_pedido   DateTime  @default(now())
+  data_chegada  DateTime?
+  fornecedor    String?
+  observacoes   String?
+  criado_em     DateTime  @default(now())
+
+  material      Material? @relation(fields: [material_id], references: [id], onDelete: SetNull)
+  chegadas      ReposicaoChegada[]
+
+  @@map("reposicoes")
+}
+
+model ReposicaoChegada {
+  id            String    @id @default(uuid())
+  reposicao_id  String
+  quantidade    Int       @default(0)
+  data_chegada  DateTime  @default(now())
+  observacao    String?
+  criado_em     DateTime  @default(now())
+
+  reposicao     Reposicao @relation(fields: [reposicao_id], references: [id], onDelete: Cascade)
+
+  @@index([reposicao_id])
+  @@map("reposicao_chegadas")
+}

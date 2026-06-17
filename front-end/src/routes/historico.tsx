@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getSupabase } from "@/lib/supabase-browser";
+import { api } from "@/lib/api";
 import { AppLayout } from "@/components/AppLayout";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -27,8 +27,7 @@ function HistoricoPage() {
     const { data: rows = [] } = useQuery({
         queryKey: ["historico"],
         queryFn: async () => {
-            const supabase = await getSupabase();
-            const { data } = await supabase.from("historico").select("*").order("criado_em", { ascending: false }).limit(1000);
+            const { data } = await api.get("/historico");
             return data ?? [];
         },
     });
@@ -46,10 +45,8 @@ function HistoricoPage() {
     // Recalcula sempre: saldo_atual = saldo_inicial + entradas - saidas (à prova de drift).
     const ajustarEstoque = async (h: any, deltaQty: number, modo: "delete" | "edit") => {
         if (!h.material_id || !h.lote) return;
-        const supabase = await getSupabase();
-        const { data: lote } = await supabase
-            .from("estoque").select("*")
-            .eq("material_id", h.material_id).eq("lote", h.lote).maybeSingle();
+        const { data: estoqueList } = await api.get("/estoque");
+        const lote = estoqueList.find((e: any) => e.material_id === h.material_id && e.lote === h.lote);
         if (!lote) return;
 
         let novasEntradas = lote.entradas;
@@ -65,30 +62,28 @@ function HistoricoPage() {
 
         const novoSaldo = Math.max(0, lote.saldo_inicial + novasEntradas - novasSaidas);
 
-        await supabase.from("estoque").update({
+        await api.put(`/estoque/${lote.id}`, {
             entradas: novasEntradas,
             saidas: novasSaidas,
             saldo_atual: novoSaldo,
             ultima_movimentacao: new Date().toISOString(),
-        }).eq("id", lote.id);
+        });
     };
 
     const salvar = useMutation({
         mutationFn: async (form: any) => {
-            const supabase = await getSupabase();
             const original = editRow;
             const novaQtd = parseInt(form.quantidade) || 0;
             if (novaQtd <= 0) throw new Error("Quantidade deve ser maior que zero.");
             const deltaQty = novaQtd - original.quantidade;
             if (deltaQty !== 0) await ajustarEstoque(original, deltaQty, "edit");
-            const { error } = await supabase.from("historico").update({
+            await api.put(`/historico/${original.id}`, {
                 paciente: form.paciente || null,
                 convenio: form.convenio || null,
                 hospital: form.hospital || null,
                 procedimento: form.procedimento || null,
                 quantidade: novaQtd,
-            }).eq("id", original.id);
-            if (error) throw error;
+            });
         },
         onSuccess: () => { toast.success("Registro atualizado"); qc.invalidateQueries(); setEditRow(null); },
         onError: (e: any) => toast.error(e.message),
@@ -96,10 +91,8 @@ function HistoricoPage() {
 
     const apagar = useMutation({
         mutationFn: async (h: any) => {
-            const supabase = await getSupabase();
             await ajustarEstoque(h, 0, "delete");
-            const { error } = await supabase.from("historico").delete().eq("id", h.id);
-            if (error) throw error;
+            await api.delete(`/historico/${h.id}`);
         },
         onSuccess: () => { toast.success("Registro apagado e estoque ajustado"); qc.invalidateQueries(); setDelRow(null); },
         onError: (e: any) => toast.error(e.message),

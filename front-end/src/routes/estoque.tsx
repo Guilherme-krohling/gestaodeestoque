@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getSupabase } from "@/lib/supabase-browser";
+import { api } from "@/lib/api";
 import { AppLayout } from "@/components/AppLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,12 +29,7 @@ function EstoquePage() {
     const { data: rows = [], isLoading } = useQuery({
         queryKey: ["estoque-list"],
         queryFn: async () => {
-            const supabase = await getSupabase();
-            const { data, error } = await supabase
-                .from("estoque")
-                .select("*, materiais(*)")
-                .order("ultima_movimentacao", { ascending: false });
-            if (error) throw error;
+            const { data } = await api.get("/estoque");
             return data ?? [];
         },
     });
@@ -161,9 +156,7 @@ function NovoMaterialDialog({ onSaved }: { onSaved: () => void }) {
     });
     const m = useMutation({
         mutationFn: async () => {
-            const supabase = await getSupabase();
-            const { error } = await supabase.from("materiais").insert(form);
-            if (error) throw error;
+            await api.post("/materiais", form);
         },
         onSuccess: () => { toast.success("Material cadastrado"); onSaved(); },
         onError: (e: any) => toast.error(e.message),

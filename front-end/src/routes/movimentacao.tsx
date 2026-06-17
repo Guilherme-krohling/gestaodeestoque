@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getSupabase } from "@/lib/supabase-browser";
+import { api } from "@/lib/api";
 import { AppLayout } from "@/components/AppLayout";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -43,8 +43,8 @@ function EntradaTab() {
     const { data: materiais = [] } = useQuery({
         queryKey: ["materiais"],
         queryFn: async () => {
-            const supabase = await getSupabase();
-            return (await supabase.from("materiais").select("*").order("nome")).data ?? [];
+            const { data } = await api.get("/materiais");
+            return data ?? [];
         },
     });
 
@@ -69,45 +69,39 @@ function EntradaTab() {
         mutationFn: async () => {
             if (!form.material_id || !form.lote || form.quantidade <= 0)
                 throw new Error("Preencha material, lote e quantidade.");
-            const supabase = await getSupabase();
-            const { data: existente } = await supabase
-                .from("estoque")
-                .select("*")
-                .eq("material_id", form.material_id)
-                .eq("lote", form.lote)
-                .maybeSingle();
+            
+            const { data: estoqueList } = await api.get("/estoque");
+            const existente = estoqueList.find((e: any) => e.material_id === form.material_id && e.lote === form.lote);
 
             const agora = new Date().toISOString();
             if (existente) {
-                const { error } = await supabase.from("estoque").update({
+                await api.put(`/estoque/${existente.id}`, {
                     entradas: existente.entradas + form.quantidade,
                     saldo_atual: existente.saldo_atual + form.quantidade,
                     validade: form.validade || existente.validade,
                     ultima_movimentacao: agora,
-                }).eq("id", existente.id);
-                if (error) throw error;
+                });
             } else {
-                const { error } = await supabase.from("estoque").insert({
+                await api.post("/estoque", {
                     material_id: form.material_id,
                     lote: form.lote,
-                    validade: form.validade || null,
+                    validade: form.validade ? new Date(form.validade).toISOString() : null,
                     saldo_inicial: form.quantidade,
                     entradas: form.quantidade,
                     saidas: 0,
                     saldo_atual: form.quantidade,
                     ultima_movimentacao: agora,
                 });
-                if (error) throw error;
             }
 
-            await supabase.from("historico").insert({
+            await api.post("/historico", {
                 tipo: "Entrada",
                 material_id: form.material_id,
                 material_nome: mat?.nome,
                 referencia_cfn: form.referencia_cfn,
                 tamanho: form.tamanho,
                 lote: form.lote,
-                validade: form.validade || null,
+                validade: form.validade ? new Date(form.validade).toISOString() : null,
                 quantidade: form.quantidade,
             });
         },
@@ -162,16 +156,15 @@ function SaidaTab() {
     const { data: lotes = [] } = useQuery({
         queryKey: ["lotes-disponiveis"],
         queryFn: async () => {
-            const supabase = await getSupabase();
-            const { data } = await supabase.from("estoque").select("*, materiais(*)").gt("saldo_atual", 0);
-            return data ?? [];
+            const { data } = await api.get("/estoque");
+            return (data ?? []).filter((e: any) => e.saldo_atual > 0);
         },
     });
     const { data: procedimentos = [] } = useQuery({
         queryKey: ["procedimentos"],
         queryFn: async () => {
-            const supabase = await getSupabase();
-            return (await supabase.from("procedimentos").select("*").order("nome")).data ?? [];
+            const { data } = await api.get("/procedimentos");
+            return data ?? [];
         },
     });
 
@@ -196,46 +189,39 @@ function SaidaTab() {
             if (form.itens.length === 0 || form.itens.some(it => !it.estoque_id || it.quantidade <= 0))
                 throw new Error("Adicione ao menos um material com quantidade válida.");
 
-            // Agrega quantidades por lote (caso o usuário escolha o mesmo lote 2x)
+            // Agrega quantidades por lote
             const agg = new Map<string, number>();
             for (const it of form.itens) agg.set(it.estoque_id, (agg.get(it.estoque_id) || 0) + it.quantidade);
 
             const lotesSelecionados = Array.from(agg.entries()).map(([id, qtd]) => {
                 const lote: any = lotes.find((l: any) => l.id === id);
                 if (!lote) throw new Error("Lote não encontrado.");
-                if (qtd > lote.saldo_atual) throw new Error(`Quantidade maior que saldo de ${lote.materiais.nome} (lote ${lote.lote}).`);
+                if (qtd > lote.saldo_atual) throw new Error(`Quantidade maior que saldo de ${lote.material?.nome || 'material'} (lote ${lote.lote}).`);
                 return { lote, qtd };
             });
 
-            const supabase = await getSupabase();
             const agora = new Date().toISOString();
-            const cirurgiaId = crypto.randomUUID();
 
             for (const { lote, qtd } of lotesSelecionados) {
-                const { error: e1 } = await supabase.from("estoque").update({
+                await api.put(`/estoque/${lote.id}`, {
                     saidas: lote.saidas + qtd,
                     saldo_atual: lote.saldo_atual - qtd,
                     ultima_movimentacao: agora,
-                }).eq("id", lote.id);
-                if (e1) throw e1;
+                });
 
-                const { error: e2 } = await supabase.from("historico").insert({
+                await api.post("/historico", {
                     tipo: "Saída",
                     material_id: lote.material_id,
-                    material_nome: lote.materiais.nome,
-                    referencia_cfn: lote.materiais.referencia_cfn,
-                    tamanho: lote.materiais.tamanho,
+                    material_nome: lote.material?.nome,
+                    referencia_cfn: lote.material?.referencia_cfn,
+                    tamanho: lote.material?.tamanho,
                     lote: lote.lote,
-                    validade: lote.validade,
+                    validade: lote.validade ? new Date(lote.validade).toISOString() : null,
                     paciente: form.paciente,
                     convenio: form.convenio,
-                    hospital: form.hospital || null,
                     procedimento: form.procedimento,
                     quantidade: qtd,
-                    cirurgia_id: cirurgiaId,
-                    criado_em: new Date(form.data).toISOString(),
-                } as any);
-                if (e2) throw e2;
+                });
             }
         },
         onSuccess: () => {
@@ -282,7 +268,7 @@ function SaidaTab() {
                                     <SelectContent>
                                         {lotes.map((l: any) => (
                                             <SelectItem key={l.id} value={l.id}>
-                                                {l.materiais.nome} · {l.materiais.tamanho || "s/ tamanho"} · Lote {l.lote} · Saldo {l.saldo_atual} · Val. {formatDate(l.validade)}
+                                                {l.material?.nome} · {l.material?.tamanho || "s/ tamanho"} · Lote {l.lote} · Saldo {l.saldo_atual} · Val. {formatDate(l.validade)}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -314,9 +300,9 @@ function ValidadeTab() {
     const { data: itens = [] } = useQuery({
         queryKey: ["validade-proxima"],
         queryFn: async () => {
-            const supabase = await getSupabase();
-            const { data } = await supabase.from("estoque").select("*, materiais(*)").gt("saldo_atual", 0);
+            const { data } = await api.get("/estoque");
             return (data ?? []).filter((r: any) => {
+                if (r.saldo_atual <= 0) return false;
                 const d = daysUntil(r.validade);
                 return d !== null && d <= 60;
             });
@@ -325,24 +311,21 @@ function ValidadeTab() {
 
     const retirar = useMutation({
         mutationFn: async (lote: any) => {
-            const supabase = await getSupabase();
             const agora = new Date().toISOString();
             const qty = lote.saldo_atual;
-            const { error: e1 } = await supabase.from("estoque").update({
+            await api.put(`/estoque/${lote.id}`, {
                 saidas: lote.saidas + qty, saldo_atual: 0, ultima_movimentacao: agora,
-            }).eq("id", lote.id);
-            if (e1) throw e1;
-            const { error: e2 } = await supabase.from("historico").insert({
+            });
+            await api.post("/historico", {
                 tipo: "Val. vencida",
                 material_id: lote.material_id,
-                material_nome: lote.materiais.nome,
-                referencia_cfn: lote.materiais.referencia_cfn,
-                tamanho: lote.materiais.tamanho,
+                material_nome: lote.material?.nome,
+                referencia_cfn: lote.material?.referencia_cfn,
+                tamanho: lote.material?.tamanho,
                 lote: lote.lote,
-                validade: lote.validade,
+                validade: lote.validade ? new Date(lote.validade).toISOString() : null,
                 quantidade: qty,
             });
-            if (e2) throw e2;
         },
         onSuccess: () => { toast.success("Item retirado por validade"); qc.invalidateQueries(); },
         onError: (e: any) => toast.error(e.message),
@@ -362,7 +345,7 @@ function ValidadeTab() {
                         return (
                             <div key={l.id} className="py-3 flex items-center justify-between">
                                 <div>
-                                    <div className="font-medium">{l.materiais.nome}</div>
+                                    <div className="font-medium">{l.material?.nome}</div>
                                     <div className="text-sm text-slate-500">
                                         Lote {l.lote} · Val. {formatDate(l.validade)} · Saldo {l.saldo_atual}
                                     </div>
