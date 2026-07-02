@@ -50,56 +50,99 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
     return (
         <div className="flex min-h-screen bg-slate-50 text-slate-900">
-            <aside className="hidden md:flex w-64 flex-col border-r bg-white">
-                <div className="flex items-center gap-3 px-6 py-5 border-b">
-                    <img
-                        src={logoDogliotti}
-                        alt="Dogliotti"
-                        className="h-10 w-10 object-contain"
-                    />
-                    <div>
-                        <div className="text-sm font-semibold leading-tight">Dogliotti</div>
-                        <div className="text-xs text-slate-500">Gestão de Estoque - Vascular</div>
+            <aside className="hidden w-72 flex-col border-r border-slate-800 bg-slate-950 text-white md:flex">
+                <div className="border-b border-white/10 px-5 py-5">
+                    <div className="flex items-center gap-3 rounded-2xl bg-white/5 p-3">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white">
+                            <img
+                                src={logoDogliotti}
+                                alt="Dogliotti"
+                                className="h-9 w-9 object-contain"
+                            />
+                        </div>
+
+                        <div>
+                            <div className="text-sm font-semibold leading-tight text-white">
+                                Dogliotti
+                            </div>
+                            <div className="mt-0.5 text-xs text-slate-400">
+                                Gestão de Estoque
+                            </div>
+                            <div className="text-xs text-sky-300">
+                                Vascular
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <nav className="flex-1 px-3 py-4 space-y-1">
+
+                <nav className="flex-1 space-y-1 px-4 py-5">
                     {nav.map((item) => {
                         const Icon = item.icon;
                         const active = item.to === "/" ? path === "/" : path.startsWith(item.to);
+
                         return (
                             <Link
                                 key={item.to}
                                 to={item.to}
                                 className={cn(
-                                    "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                                    "group relative flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all",
                                     active
-                                        ? "bg-sky-50 text-sky-700"
-                                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                                        ? "bg-white text-slate-950 shadow-lg shadow-black/20"
+                                        : "text-slate-300 hover:bg-white/10 hover:text-white"
                                 )}
                             >
-                                <Icon className="h-4 w-4" />
-                                {item.label}
+                                {active && (
+                                    <span className="absolute left-0 top-1/2 h-7 w-1 -translate-y-1/2 rounded-r-full bg-sky-500" />
+                                )}
+
+                                <span
+                                    className={cn(
+                                        "flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
+                                        active
+                                            ? "bg-sky-100 text-sky-700"
+                                            : "bg-white/5 text-slate-400 group-hover:bg-white/10 group-hover:text-white"
+                                    )}
+                                >
+                                    <Icon className="h-4 w-4" />
+                                </span>
+
+                                <span>{item.label}</span>
                             </Link>
                         );
                     })}
                 </nav>
-                <div className="border-t px-3 py-3">
+
+                <div className="border-t border-white/10 p-4">
+                    <div className="mb-3 rounded-2xl bg-white/5 p-4">
+                        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                            Sistema interno
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-slate-200">
+                            Controle vascular
+                        </p>
+                    </div>
+
                     <button
                         type="button"
                         onClick={async () => {
-                            await api.post('/auth/logout');
-                            localStorage.removeItem('token');
+                            await api.post("/auth/logout");
+                            localStorage.removeItem("token");
                             window.location.href = "/login";
                         }}
-                        className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                        className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-300 transition-colors hover:bg-red-500/10 hover:text-red-300"
                     >
-                        <LogOut className="h-4 w-4" />
+                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5">
+                            <LogOut className="h-4 w-4" />
+                        </span>
                         Sair
                     </button>
                 </div>
             </aside>
+
             <main className="flex-1 overflow-x-auto">
-                <div className="mx-auto max-w-7xl px-6 py-8">{children}</div>
+                <div className="mx-auto max-w-7xl px-6 py-8">
+                    {children}
+                </div>
             </main>
         </div>
     );

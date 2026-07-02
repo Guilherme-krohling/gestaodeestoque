@@ -13,27 +13,101 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 import { formatDate, daysUntil } from "@/lib/stock-utils";
+import {
+    ArrowDownToLine,
+    ArrowUpFromLine,
+    CalendarClock,
+    ClipboardCheck,
+    PackageCheck,
+    ScanLine,
+    ShieldCheck,
+    Trash2,
+} from "lucide-react";
 
 export const Route = createFileRoute("/movimentacao")({ ssr: false, component: MovimentacaoPage });
 
 function MovimentacaoPage() {
     return (
         <AppLayout>
-            <header className="mb-6">
-                <h1 className="text-2xl font-semibold tracking-tight">Movimentação</h1>
-                <p className="text-sm text-slate-500 mt-1">Entradas, saídas por procedimento e retiradas por validade</p>
-            </header>
+            <div className="space-y-6">
+                <header className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+                    <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-sky-100 blur-3xl" />
+                    <div className="absolute bottom-0 left-20 h-32 w-32 rounded-full bg-indigo-100 blur-3xl" />
 
-            <Tabs defaultValue="entrada">
-                <TabsList>
-                    <TabsTrigger value="entrada">Entrada</TabsTrigger>
-                    <TabsTrigger value="saida">Saída (procedimento)</TabsTrigger>
-                    <TabsTrigger value="validade">Retirada por validade</TabsTrigger>
-                </TabsList>
-                <TabsContent value="entrada" className="mt-4"><EntradaTab /></TabsContent>
-                <TabsContent value="saida" className="mt-4"><SaidaTab /></TabsContent>
-                <TabsContent value="validade" className="mt-4"><ValidadeTab /></TabsContent>
-            </Tabs>
+                    <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                            <span className="inline-flex rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700">
+                                Movimentação de estoque
+                            </span>
+
+                            <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-950">
+                                Movimentação
+                            </h1>
+
+                            <p className="mt-2 max-w-2xl text-sm text-slate-500">
+                                Registre entradas, saídas por procedimento e retiradas por validade de forma controlada.
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-3">
+                            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-center">
+                                <ArrowDownToLine className="mx-auto h-5 w-5 text-emerald-600" />
+                                <p className="mt-2 text-xs font-medium text-slate-500">Entrada</p>
+                            </div>
+
+                            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-center">
+                                <ArrowUpFromLine className="mx-auto h-5 w-5 text-indigo-600" />
+                                <p className="mt-2 text-xs font-medium text-slate-500">Saída</p>
+                            </div>
+
+                            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-center">
+                                <CalendarClock className="mx-auto h-5 w-5 text-amber-600" />
+                                <p className="mt-2 text-xs font-medium text-slate-500">Validade</p>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <Tabs defaultValue="entrada" className="space-y-5">
+                    <TabsList className="h-auto rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
+                        <TabsTrigger
+                            value="entrada"
+                            className="rounded-xl px-5 py-2.5 data-[state=active]:bg-slate-950 data-[state=active]:text-white"
+                        >
+                            <ArrowDownToLine className="mr-2 h-4 w-4" />
+                            Entrada
+                        </TabsTrigger>
+
+                        <TabsTrigger
+                            value="saida"
+                            className="rounded-xl px-5 py-2.5 data-[state=active]:bg-slate-950 data-[state=active]:text-white"
+                        >
+                            <ArrowUpFromLine className="mr-2 h-4 w-4" />
+                            Saída
+                        </TabsTrigger>
+
+                        <TabsTrigger
+                            value="validade"
+                            className="rounded-xl px-5 py-2.5 data-[state=active]:bg-slate-950 data-[state=active]:text-white"
+                        >
+                            <CalendarClock className="mr-2 h-4 w-4" />
+                            Retirada por validade
+                        </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="entrada" className="mt-0">
+                        <EntradaTab />
+                    </TabsContent>
+
+                    <TabsContent value="saida" className="mt-0">
+                        <SaidaTab />
+                    </TabsContent>
+
+                    <TabsContent value="validade" className="mt-0">
+                        <ValidadeTab />
+                    </TabsContent>
+                </Tabs>
+            </div>
         </AppLayout>
     );
 }
@@ -114,38 +188,184 @@ function EntradaTab() {
     });
 
     return (
-        <Card className="p-6">
-            <p className="text-sm text-slate-600 mb-4">
-                O código de barras da caixa do produto já contém lote, referência e validade. Use o leitor USB para preencher os campos abaixo, ou digite manualmente.
-            </p>
-            <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                    <Label>Material</Label>
-                    <Select value={form.material_id} onValueChange={onSelectMaterial}>
-                        <SelectTrigger><SelectValue placeholder="Selecione um material cadastrado" /></SelectTrigger>
-                        <SelectContent>
-                            {materiais.map((m: any) => (
-                                <SelectItem key={m.id} value={m.id}>{m.nome} {m.tamanho ? `· ${m.tamanho}` : ""}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+        <Card className="overflow-hidden border-slate-200 shadow-sm">
+            <div className="border-b border-slate-100 bg-white px-6 py-5">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <div className="rounded-xl bg-emerald-100 p-2 text-emerald-700">
+                                <PackageCheck className="h-5 w-5" />
+                            </div>
+
+                            <div>
+                                <h2 className="text-lg font-semibold text-slate-950">
+                                    Registrar entrada
+                                </h2>
+                                <p className="text-sm text-slate-500">
+                                    Adicione novos lotes ou atualize o saldo de um lote existente.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                        <div className="flex items-center gap-2">
+                            <ScanLine className="h-4 w-4 text-sky-600" />
+                            Leitor USB ou preenchimento manual
+                        </div>
+                    </div>
                 </div>
-                <div><Label>Referência (CFN)</Label>
-                    <Input value={form.referencia_cfn} onChange={(e) => setForm({ ...form, referencia_cfn: e.target.value })} /></div>
-                <div><Label>Tamanho</Label>
-                    <Input value={form.tamanho} onChange={(e) => setForm({ ...form, tamanho: e.target.value })} /></div>
-                <div><Label>Lote</Label>
-                    <Input value={form.lote} onChange={(e) => setForm({ ...form, lote: e.target.value })} /></div>
-                <div><Label>Validade</Label>
-                    <Input type="date" value={form.validade} onChange={(e) => setForm({ ...form, validade: e.target.value })} /></div>
-                <div><Label>Quantidade</Label>
-                    <Input type="number" min={1} value={form.quantidade}
-                        onChange={(e) => setForm({ ...form, quantidade: parseInt(e.target.value || "0") })} /></div>
-                <div><Label>Fornecedor</Label>
-                    <Input value={form.fornecedor} onChange={(e) => setForm({ ...form, fornecedor: e.target.value })} /></div>
             </div>
-            <div className="mt-6 flex justify-end">
-                <Button onClick={() => submit.mutate()} disabled={submit.isPending}>Confirmar entrada</Button>
+
+            <div className="p-6">
+                <div className="mb-6 rounded-2xl border border-sky-100 bg-sky-50 px-5 py-4">
+                    <div className="flex gap-3">
+                        <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-sky-700" />
+                        <p className="text-sm leading-6 text-slate-600">
+                            O código de barras da caixa do produto já contém lote, referência e validade.
+                            Use o leitor USB para preencher os campos abaixo ou digite manualmente.
+                        </p>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                    <div className="space-y-2 lg:col-span-2">
+                        <Label className="text-sm font-medium text-slate-700">
+                            Material
+                        </Label>
+
+                        <Select value={form.material_id} onValueChange={onSelectMaterial}>
+                            <SelectTrigger className="h-11 rounded-xl border-slate-200 bg-slate-50">
+                                <SelectValue placeholder="Selecione um material cadastrado" />
+                            </SelectTrigger>
+
+                            <SelectContent>
+                                {materiais.map((m: any) => (
+                                    <SelectItem key={m.id} value={m.id}>
+                                        {m.nome} {m.tamanho ? `· ${m.tamanho}` : ""}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-sm font-medium text-slate-700">
+                            Referência (CFN)
+                        </Label>
+                        <Input
+                            value={form.referencia_cfn}
+                            onChange={(e) =>
+                                setForm({ ...form, referencia_cfn: e.target.value })
+                            }
+                            className="h-11 rounded-xl border-slate-200 bg-slate-50 focus-visible:ring-sky-500"
+                            placeholder="Ex: CFN-0001"
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-sm font-medium text-slate-700">
+                            Tamanho
+                        </Label>
+                        <Input
+                            value={form.tamanho}
+                            onChange={(e) =>
+                                setForm({ ...form, tamanho: e.target.value })
+                            }
+                            className="h-11 rounded-xl border-slate-200 bg-slate-50 focus-visible:ring-sky-500"
+                            placeholder="Ex: 6mm"
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-sm font-medium text-slate-700">
+                            Lote
+                        </Label>
+                        <Input
+                            value={form.lote}
+                            onChange={(e) =>
+                                setForm({ ...form, lote: e.target.value })
+                            }
+                            className="h-11 rounded-xl border-slate-200 bg-slate-50 focus-visible:ring-sky-500"
+                            placeholder="Digite o lote"
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-sm font-medium text-slate-700">
+                            Validade
+                        </Label>
+                        <Input
+                            type="date"
+                            value={form.validade}
+                            onChange={(e) =>
+                                setForm({ ...form, validade: e.target.value })
+                            }
+                            className="h-11 rounded-xl border-slate-200 bg-slate-50 focus-visible:ring-sky-500"
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-sm font-medium text-slate-700">
+                            Quantidade
+                        </Label>
+                        <Input
+                            type="number"
+                            min={1}
+                            value={form.quantidade}
+                            onChange={(e) =>
+                                setForm({
+                                    ...form,
+                                    quantidade: parseInt(e.target.value || "0"),
+                                })
+                            }
+                            className="h-11 rounded-xl border-slate-200 bg-slate-50 focus-visible:ring-sky-500"
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-sm font-medium text-slate-700">
+                            Fornecedor
+                        </Label>
+                        <Input
+                            value={form.fornecedor}
+                            onChange={(e) =>
+                                setForm({ ...form, fornecedor: e.target.value })
+                            }
+                            className="h-11 rounded-xl border-slate-200 bg-slate-50 focus-visible:ring-sky-500"
+                            placeholder="Fornecedor padrão"
+                        />
+                    </div>
+                </div>
+
+                <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="h-11 rounded-xl border-slate-200 px-6"
+                        onClick={() =>
+                            setForm({
+                                material_id: "",
+                                referencia_cfn: "",
+                                tamanho: "",
+                                lote: "",
+                                validade: "",
+                                quantidade: 1,
+                                fornecedor: "",
+                            })
+                        }
+                    >
+                        Limpar campos
+                    </Button>
+
+                    <Button
+                        onClick={() => submit.mutate()}
+                        disabled={submit.isPending}
+                        className="h-11 rounded-xl bg-slate-950 px-6 font-semibold text-white shadow-lg shadow-slate-900/20 hover:bg-emerald-700"
+                    >
+                        {submit.isPending ? "Confirmando..." : "Confirmar entrada"}
+                    </Button>
+                </div>
             </div>
         </Card>
     );

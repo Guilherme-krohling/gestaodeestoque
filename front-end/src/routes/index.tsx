@@ -34,115 +34,277 @@ function DashboardPage() {
 
     return (
         <AppLayout>
-            <header className="mb-8">
-                <h1 className="text-2xl font-bold tracking-tight text-slate-900">Painel Geral</h1>
-                <p className="text-sm text-slate-500 mt-1">Visão geral do estoque vascular</p>
-            </header>
+            <div className="space-y-8">
+                {/* Header */}
+                <header className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+                    <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-sky-100 blur-3xl" />
+                    <div className="absolute bottom-0 left-20 h-32 w-32 rounded-full bg-indigo-100 blur-3xl" />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <Card className="p-6">
-                    <div className="flex items-center gap-4">
-                        <div className="bg-amber-100 p-3 rounded-lg text-amber-600">
-                            <AlertTriangle className="h-6 w-6" />
-                        </div>
+                    <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                         <div>
-                            <div className="text-2xl font-bold">{lotesCriticos}</div>
-                            <div className="text-sm text-slate-500">Lotes a Vencer</div>
-                        </div>
-                    </div>
-                </Card>
+                            <span className="inline-flex rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700">
+                                Dashboard
+                            </span>
 
-                <Card className="p-6">
-                    <div className="flex items-center gap-4">
-                        <div className="bg-sky-100 p-3 rounded-lg text-sky-600">
-                            <Activity className="h-6 w-6" />
-                        </div>
-                        <div>
-                            <div className="text-2xl font-bold">{movsHoje}</div>
-                            <div className="text-sm text-slate-500">Movimentações Hoje</div>
-                        </div>
-                    </div>
-                </Card>
+                            <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-950">
+                                Painel Geral
+                            </h1>
 
-                <Card className="p-6">
-                    <div className="flex items-center gap-4">
-                        <div className="bg-emerald-100 p-3 rounded-lg text-emerald-600">
-                            <Package className="h-6 w-6" />
+                            <p className="mt-2 max-w-2xl text-sm text-slate-500">
+                                Acompanhe movimentações, alertas de vencimento e o status atual do estoque vascular.
+                            </p>
                         </div>
-                        <div>
-                            <div className="text-2xl font-bold">{itensAtivos}</div>
-                            <div className="text-sm text-slate-500">Materiais em Estoque</div>
-                        </div>
-                    </div>
-                </Card>
 
-                <Card className="p-6">
-                    <div className="flex items-center gap-4">
-                        <div className="bg-indigo-100 p-3 rounded-lg text-indigo-600">
-                            <History className="h-6 w-6" />
-                        </div>
-                        <div>
-                            <div className="text-2xl font-bold">{historico.length}</div>
-                            <div className="text-sm text-slate-500">Total de Registros</div>
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
+                            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                                Atualizado em
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-slate-700">
+                                {new Date().toLocaleDateString("pt-BR")}
+                            </p>
                         </div>
                     </div>
-                </Card>
-            </div>
+                </header>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="p-6">
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-lg font-semibold">Últimas Movimentações</h2>
-                        <Link to="/historico" className="text-sm text-sky-600 hover:underline">Ver tudo</Link>
-                    </div>
-                    <div className="space-y-4">
-                        {(historico as any[]).slice(0, 5).map((h: any) => (
-                            <div key={h.id} className="flex justify-between items-center pb-4 border-b last:border-0">
-                                <div>
-                                    <div className="font-medium text-sm">{h.material_nome || 'Material não informado'}</div>
-                                    <div className="text-xs text-slate-500">{new Date(h.criado_em).toLocaleString()}</div>
-                                </div>
-                                <div className="text-right">
-                                    <div className={`text-sm font-semibold ${h.tipo === 'Entrada' ? 'text-emerald-600' : 'text-indigo-600'}`}>
-                                        {h.tipo === 'Entrada' ? '+' : '-'}{h.quantidade}
-                                    </div>
-                                    <div className="text-xs text-slate-500">{h.tipo}</div>
-                                </div>
+                {/* Cards principais */}
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+                    <Card className="group overflow-hidden border-slate-200 p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
+                        <div className="flex items-start justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-slate-500">
+                                    Lotes a Vencer
+                                </p>
+                                <p className="mt-3 text-4xl font-bold text-slate-950">
+                                    {lotesCriticos}
+                                </p>
+                                <p className="mt-2 text-xs text-slate-400">
+                                    Próximos de 60 dias
+                                </p>
                             </div>
-                        ))}
-                        {historico.length === 0 && <p className="text-sm text-slate-500">Nenhuma movimentação registrada.</p>}
-                    </div>
-                </Card>
 
-                <Card className="p-6">
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-lg font-semibold">Alertas de Vencimento</h2>
-                        <Link to="/alertas" className="text-sm text-sky-600 hover:underline">Ver alertas</Link>
-                    </div>
-                    <div className="space-y-4">
-                        {(estoque as any[])
-                            .filter(r => r.saldo_atual > 0 && r.validade && (daysUntil(r.validade) ?? 999) <= 60)
-                            .sort((a, b) => (daysUntil(a.validade) ?? 0) - (daysUntil(b.validade) ?? 0))
-                            .slice(0, 5)
-                            .map((r: any) => {
-                                const d = daysUntil(r.validade)!;
-                                return (
-                                    <div key={r.id} className="flex justify-between items-center pb-4 border-b last:border-0">
+                            <div className="rounded-2xl bg-amber-100 p-4 text-amber-600 transition-transform group-hover:scale-110">
+                                <AlertTriangle className="h-6 w-6" />
+                            </div>
+                        </div>
+                    </Card>
+
+                    <Card className="group overflow-hidden border-slate-200 p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
+                        <div className="flex items-start justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-slate-500">
+                                    Movimentações Hoje
+                                </p>
+                                <p className="mt-3 text-4xl font-bold text-slate-950">
+                                    {movsHoje}
+                                </p>
+                                <p className="mt-2 text-xs text-slate-400">
+                                    Entradas e saídas no dia
+                                </p>
+                            </div>
+
+                            <div className="rounded-2xl bg-sky-100 p-4 text-sky-600 transition-transform group-hover:scale-110">
+                                <Activity className="h-6 w-6" />
+                            </div>
+                        </div>
+                    </Card>
+
+                    <Card className="group overflow-hidden border-slate-200 p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
+                        <div className="flex items-start justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-slate-500">
+                                    Materiais em Estoque
+                                </p>
+                                <p className="mt-3 text-4xl font-bold text-slate-950">
+                                    {itensAtivos}
+                                </p>
+                                <p className="mt-2 text-xs text-slate-400">
+                                    Itens com saldo ativo
+                                </p>
+                            </div>
+
+                            <div className="rounded-2xl bg-emerald-100 p-4 text-emerald-600 transition-transform group-hover:scale-110">
+                                <Package className="h-6 w-6" />
+                            </div>
+                        </div>
+                    </Card>
+
+                    <Card className="group overflow-hidden border-slate-200 p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
+                        <div className="flex items-start justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-slate-500">
+                                    Total de Registros
+                                </p>
+                                <p className="mt-3 text-4xl font-bold text-slate-950">
+                                    {historico.length}
+                                </p>
+                                <p className="mt-2 text-xs text-slate-400">
+                                    Histórico completo
+                                </p>
+                            </div>
+
+                            <div className="rounded-2xl bg-indigo-100 p-4 text-indigo-600 transition-transform group-hover:scale-110">
+                                <History className="h-6 w-6" />
+                            </div>
+                        </div>
+                    </Card>
+                </div>
+
+                {/* Conteúdo inferior */}
+                <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+                    <Card className="overflow-hidden border-slate-200 shadow-sm">
+                        <div className="border-b border-slate-100 px-6 py-5">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h2 className="text-lg font-semibold text-slate-950">
+                                        Últimas Movimentações
+                                    </h2>
+                                    <p className="mt-1 text-sm text-slate-500">
+                                        Registros mais recentes do estoque
+                                    </p>
+                                </div>
+
+                                <Link
+                                    to="/historico"
+                                    className="rounded-full bg-sky-50 px-3 py-1.5 text-sm font-medium text-sky-700 transition-colors hover:bg-sky-100"
+                                >
+                                    Ver tudo
+                                </Link>
+                            </div>
+                        </div>
+
+                        <div className="p-6">
+                            <div className="space-y-4">
+                                {(historico as any[]).slice(0, 5).map((h: any) => (
+                                    <div
+                                        key={h.id}
+                                        className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3"
+                                    >
                                         <div>
-                                            <div className="font-medium text-sm">{r.material?.nome || 'Material desconhecido'}</div>
-                                            <div className="text-xs text-slate-500">Lote: {r.lote}</div>
+                                            <div className="text-sm font-semibold text-slate-800">
+                                                {h.material_nome || "Material não informado"}
+                                            </div>
+                                            <div className="mt-1 text-xs text-slate-500">
+                                                {new Date(h.criado_em).toLocaleString("pt-BR")}
+                                            </div>
                                         </div>
+
                                         <div className="text-right">
-                                            <span className={`text-xs px-2 py-1 rounded ${d < 0 ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>
-                                                {d < 0 ? "Vencido" : `Vence em ${d} dias`}
-                                            </span>
+                                            <div
+                                                className={`text-sm font-bold ${
+                                                    h.tipo === "Entrada"
+                                                        ? "text-emerald-600"
+                                                        : "text-indigo-600"
+                                                }`}
+                                            >
+                                                {h.tipo === "Entrada" ? "+" : "-"}
+                                                {h.quantidade}
+                                            </div>
+
+                                            <div className="mt-1 text-xs text-slate-500">
+                                                {h.tipo}
+                                            </div>
                                         </div>
                                     </div>
-                                );
-                            })}
-                        {lotesCriticos === 0 && <p className="text-sm text-slate-500">Nenhum lote próximo ao vencimento.</p>}
-                    </div>
-                </Card>
+                                ))}
+
+                                {historico.length === 0 && (
+                                    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
+                                        <Activity className="h-8 w-8 text-slate-300" />
+                                        <p className="mt-3 text-sm font-medium text-slate-600">
+                                            Nenhuma movimentação registrada
+                                        </p>
+                                        <p className="mt-1 text-xs text-slate-400">
+                                            As últimas entradas e saídas aparecerão aqui.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </Card>
+
+                    <Card className="overflow-hidden border-slate-200 shadow-sm">
+                        <div className="border-b border-slate-100 px-6 py-5">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h2 className="text-lg font-semibold text-slate-950">
+                                        Alertas de Vencimento
+                                    </h2>
+                                    <p className="mt-1 text-sm text-slate-500">
+                                        Lotes que precisam de atenção
+                                    </p>
+                                </div>
+
+                                <Link
+                                    to="/alertas"
+                                    className="rounded-full bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-700 transition-colors hover:bg-amber-100"
+                                >
+                                    Ver alertas
+                                </Link>
+                            </div>
+                        </div>
+
+                        <div className="p-6">
+                            <div className="space-y-4">
+                                {(estoque as any[])
+                                    .filter(
+                                        (r) =>
+                                            r.saldo_atual > 0 &&
+                                            r.validade &&
+                                            (daysUntil(r.validade) ?? 999) <= 60
+                                    )
+                                    .sort(
+                                        (a, b) =>
+                                            (daysUntil(a.validade) ?? 0) -
+                                            (daysUntil(b.validade) ?? 0)
+                                    )
+                                    .slice(0, 5)
+                                    .map((r: any) => {
+                                        const d = daysUntil(r.validade)!;
+
+                                        return (
+                                            <div
+                                                key={r.id}
+                                                className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3"
+                                            >
+                                                <div>
+                                                    <div className="text-sm font-semibold text-slate-800">
+                                                        {r.material?.nome || "Material desconhecido"}
+                                                    </div>
+                                                    <div className="mt-1 text-xs text-slate-500">
+                                                        Lote: {r.lote}
+                                                    </div>
+                                                </div>
+
+                                                <div className="text-right">
+                                                    <span
+                                                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                            d < 0
+                                                                ? "bg-red-100 text-red-700"
+                                                                : "bg-amber-100 text-amber-700"
+                                                        }`}
+                                                    >
+                                                        {d < 0 ? "Vencido" : `Vence em ${d} dias`}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+
+                                {lotesCriticos === 0 && (
+                                    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
+                                        <AlertTriangle className="h-8 w-8 text-slate-300" />
+                                        <p className="mt-3 text-sm font-medium text-slate-600">
+                                            Nenhum lote próximo ao vencimento
+                                        </p>
+                                        <p className="mt-1 text-xs text-slate-400">
+                                            Os alertas aparecerão aqui quando houver lotes críticos.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </Card>
+                </div>
             </div>
         </AppLayout>
     );

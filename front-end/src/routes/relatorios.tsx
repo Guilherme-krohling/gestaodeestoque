@@ -4,6 +4,16 @@ import { api } from "@/lib/api";
 import { AppLayout } from "@/components/AppLayout";
 import { Card } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, PieChart, Pie, Cell } from "recharts";
+import {
+    Activity,
+    BarChart3,
+    CalendarDays,
+    ClipboardList,
+    Package,
+    PieChart as PieChartIcon,
+    RotateCcw,
+    Stethoscope,
+} from "lucide-react";
 
 export const Route = createFileRoute("/relatorios")({ ssr: false, component: RelatoriosPage });
 
@@ -112,114 +122,307 @@ function RelatoriosPage() {
 
     return (
         <AppLayout>
-            <header className="mb-6">
-                <h1 className="text-2xl font-semibold tracking-tight">Relatórios</h1>
-                <p className="text-sm text-slate-500 mt-1">Resumo do mês atual e volumetria histórica</p>
-            </header>
+            <div className="space-y-6">
+                <header className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+                    <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-indigo-100 blur-3xl" />
+                    <div className="absolute bottom-0 left-20 h-32 w-32 rounded-full bg-sky-100 blur-3xl" />
 
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-                <Mini title="Cirurgias (mês)" value={cirurgiasMes} color="sky" />
-                <Mini title="Entradas" value={entradas} color="emerald" />
-                <Mini title="Materiais usados" value={saidas} color="indigo" />
-                <Mini title="Procedimentos" value={histMes.filter(h => h.tipo === "Saída" && h.procedimento).length} color="sky" />
-                <Mini title="Retirados por validade" value={validade} color="red" />
-            </div>
+                    <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                            <span className="inline-flex rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+                                Análise operacional
+                            </span>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <Card className="p-6">
-                    <h2 className="font-semibold mb-1">Materiais mais saíram (todo o período)</h2>
-                    <p className="text-xs text-slate-500 mb-4">Distribuição percentual dos materiais com maior saída</p>
-                    {pieData.length === 0 ? (
-                        <p className="text-sm text-slate-500 py-8 text-center">Sem dados de saída.</p>
-                    ) : (
-                        <ResponsiveContainer width="100%" height={320}>
-                            <PieChart>
-                                <Tooltip formatter={(value: number, name: string, props: any) => {
-                                    const total = props?.payload?.total ?? 0;
-                                    const pct = total ? ((value / total) * 100).toFixed(1) : "0.0";
-                                    return [`${value} (${pct}%)`, name];
-                                }} />
-                                <Legend />
-                                <Pie
-                                    data={pieData}
-                                    dataKey="value"
-                                    nameKey="name"
-                                    cx="50%"
-                                    cy="50%"
-                                    outerRadius={100}
-                                    label={({ percent }) => `${(percent * 100).toFixed(1)}%`}
-                                >
-                                    {pieData.map((_, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                            </PieChart>
-                        </ResponsiveContainer>
-                    )}
-                </Card>
-                <Card className="p-6">
-                    <h2 className="font-semibold mb-1">Volumetria histórica</h2>
-                    <p className="text-xs text-slate-500 mb-4">Cirurgias e materiais por mês (todo o período)</p>
-                    {historicoData.length === 0 ? (
-                        <p className="text-sm text-slate-500 py-8 text-center">Sem dados.</p>
-                    ) : (
-                        <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={historicoData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                                <XAxis dataKey="mes" />
-                                <YAxis allowDecimals={false} />
-                                <Tooltip />
-                                <Legend />
-                                <Bar dataKey="cirurgias" name="Cirurgias" fill="#0284c7" radius={[4, 4, 0, 0]} />
-                                <Bar dataKey="materiais" name="Materiais" fill="#6366f1" radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    )}
-                </Card>
-            </div>
+                            <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-950">
+                                Relatórios
+                            </h1>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="p-6">
-                    <h2 className="font-semibold mb-4">Procedimentos por tipo (mês)</h2>
-                    {procData.length === 0 ? <p className="text-sm text-slate-500 py-8 text-center">Sem dados.</p> : (
-                        <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={procData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                                <XAxis dataKey="name" />
-                                <YAxis allowDecimals={false} />
-                                <Tooltip />
-                                <Legend />
-                                <Bar dataKey="value" name="Cirurgias realizadas" fill="#0284c7" radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    )}
-                </Card>
-                <Card className="p-6">
-                    <h2 className="font-semibold mb-4">Materiais mais movimentados (mês)</h2>
-                    {matData.length === 0 ? <p className="text-sm text-slate-500 py-8 text-center">Sem dados.</p> : (
-                        <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={matData} layout="vertical" margin={{ left: 40 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                                <XAxis type="number" allowDecimals={false} />
-                                <YAxis type="category" dataKey="name" width={140} />
-                                <Tooltip />
-                                <Legend />
-                                <Bar dataKey="value" name="Quantidade usada" fill="#6366f1" radius={[0, 4, 4, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    )}
-                </Card>
+                            <p className="mt-2 max-w-2xl text-sm text-slate-500">
+                                Resumo do mês atual, distribuição de materiais e volumetria histórica do estoque.
+                            </p>
+                        </div>
+
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
+                            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                                Período atual
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-slate-700">
+                                {now.toLocaleDateString("pt-BR", {
+                                    month: "long",
+                                    year: "numeric",
+                                })}
+                            </p>
+                        </div>
+                    </div>
+                </header>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+                    <Mini
+                        title="Cirurgias"
+                        subtitle="No mês atual"
+                        value={cirurgiasMes}
+                        color="sky"
+                        icon={<Stethoscope className="h-5 w-5" />}
+                    />
+
+                    <Mini
+                        title="Entradas"
+                        subtitle="Materiais recebidos"
+                        value={entradas}
+                        color="emerald"
+                        icon={<Package className="h-5 w-5" />}
+                    />
+
+                    <Mini
+                        title="Materiais usados"
+                        subtitle="Saídas do mês"
+                        value={saidas}
+                        color="indigo"
+                        icon={<Activity className="h-5 w-5" />}
+                    />
+
+                    <Mini
+                        title="Procedimentos"
+                        subtitle="Registros de saída"
+                        value={histMes.filter((h) => h.tipo === "Saída" && h.procedimento).length}
+                        color="sky"
+                        icon={<ClipboardList className="h-5 w-5" />}
+                    />
+
+                    <Mini
+                        title="Validade"
+                        subtitle="Retirados vencidos"
+                        value={validade}
+                        color="red"
+                        icon={<RotateCcw className="h-5 w-5" />}
+                    />
+                </div>
+
+                <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+                    <Card className="overflow-hidden border-slate-200 shadow-sm">
+                        <div className="border-b border-slate-100 bg-white px-6 py-5">
+                            <div className="flex items-center gap-3">
+                                <div className="rounded-2xl bg-sky-100 p-3 text-sky-700">
+                                    <PieChartIcon className="h-5 w-5" />
+                                </div>
+
+                                <div>
+                                    <h2 className="text-lg font-semibold text-slate-950">
+                                        Materiais que mais saíram
+                                    </h2>
+                                    <p className="mt-1 text-sm text-slate-500">
+                                        Distribuição percentual dos materiais com maior saída em todo o período.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-6">
+                            {pieData.length === 0 ? (
+                                <EmptyChart text="Sem dados de saída." />
+                            ) : (
+                                <ResponsiveContainer width="100%" height={320}>
+                                    <PieChart>
+                                        <Tooltip
+                                            formatter={(value: number, name: string, props: any) => {
+                                                const total = props?.payload?.total ?? 0;
+                                                const pct = total ? ((value / total) * 100).toFixed(1) : "0.0";
+                                                return [`${value} (${pct}%)`, name];
+                                            }}
+                                        />
+                                        <Legend />
+                                        <Pie
+                                            data={pieData}
+                                            dataKey="value"
+                                            nameKey="name"
+                                            cx="50%"
+                                            cy="50%"
+                                            outerRadius={105}
+                                            label={({ percent }) => `${(percent * 100).toFixed(1)}%`}
+                                        >
+                                            {pieData.map((_, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            )}
+                        </div>
+                    </Card>
+
+                    <Card className="overflow-hidden border-slate-200 shadow-sm">
+                        <div className="border-b border-slate-100 bg-white px-6 py-5">
+                            <div className="flex items-center gap-3">
+                                <div className="rounded-2xl bg-indigo-100 p-3 text-indigo-700">
+                                    <BarChart3 className="h-5 w-5" />
+                                </div>
+
+                                <div>
+                                    <h2 className="text-lg font-semibold text-slate-950">
+                                        Volumetria histórica
+                                    </h2>
+                                    <p className="mt-1 text-sm text-slate-500">
+                                        Cirurgias e materiais por mês considerando todo o período.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-6">
+                            {historicoData.length === 0 ? (
+                                <EmptyChart text="Sem dados históricos." />
+                            ) : (
+                                <ResponsiveContainer width="100%" height={320}>
+                                    <BarChart data={historicoData}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                                        <XAxis dataKey="mes" tick={{ fontSize: 12 }} />
+                                        <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                                        <Tooltip />
+                                        <Legend />
+                                        <Bar dataKey="cirurgias" name="Cirurgias" fill="#0284c7" radius={[6, 6, 0, 0]} />
+                                        <Bar dataKey="materiais" name="Materiais" fill="#6366f1" radius={[6, 6, 0, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            )}
+                        </div>
+                    </Card>
+                </div>
+
+                <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+                    <Card className="overflow-hidden border-slate-200 shadow-sm">
+                        <div className="border-b border-slate-100 bg-white px-6 py-5">
+                            <div className="flex items-center gap-3">
+                                <div className="rounded-2xl bg-emerald-100 p-3 text-emerald-700">
+                                    <CalendarDays className="h-5 w-5" />
+                                </div>
+
+                                <div>
+                                    <h2 className="text-lg font-semibold text-slate-950">
+                                        Procedimentos por tipo
+                                    </h2>
+                                    <p className="mt-1 text-sm text-slate-500">
+                                        Quantidade de procedimentos registrados no mês atual.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-6">
+                            {procData.length === 0 ? (
+                                <EmptyChart text="Sem dados de procedimentos." />
+                            ) : (
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <BarChart data={procData}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                                        <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                                        <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                                        <Tooltip />
+                                        <Legend />
+                                        <Bar dataKey="value" name="Cirurgias realizadas" fill="#0284c7" radius={[6, 6, 0, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            )}
+                        </div>
+                    </Card>
+
+                    <Card className="overflow-hidden border-slate-200 shadow-sm">
+                        <div className="border-b border-slate-100 bg-white px-6 py-5">
+                            <div className="flex items-center gap-3">
+                                <div className="rounded-2xl bg-violet-100 p-3 text-violet-700">
+                                    <BarChart3 className="h-5 w-5" />
+                                </div>
+
+                                <div>
+                                    <h2 className="text-lg font-semibold text-slate-950">
+                                        Materiais mais movimentados
+                                    </h2>
+                                    <p className="mt-1 text-sm text-slate-500">
+                                        Top 10 materiais com maior saída no mês atual.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-6">
+                            {matData.length === 0 ? (
+                                <EmptyChart text="Sem dados de materiais." />
+                            ) : (
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <BarChart data={matData} layout="vertical" margin={{ left: 40 }}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                                        <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12 }} />
+                                        <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 12 }} />
+                                        <Tooltip />
+                                        <Legend />
+                                        <Bar dataKey="value" name="Quantidade usada" fill="#6366f1" radius={[0, 6, 6, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            )}
+                        </div>
+                    </Card>
+                </div>
             </div>
         </AppLayout>
     );
 }
 
-function Mini({ title, value, color }: { title: string; value: number; color: "emerald" | "indigo" | "sky" | "red" }) {
-    const tint = { emerald: "text-emerald-700", indigo: "text-indigo-700", sky: "text-sky-700", red: "text-red-700" }[color];
+function Mini({
+    title,
+    subtitle,
+    value,
+    color,
+    icon,
+}: {
+    title: string;
+    subtitle: string;
+    value: number;
+    color: "emerald" | "indigo" | "sky" | "red";
+    icon: React.ReactNode;
+}) {
+    const styles = {
+        emerald: {
+            text: "text-emerald-700",
+            bg: "bg-emerald-100",
+        },
+        indigo: {
+            text: "text-indigo-700",
+            bg: "bg-indigo-100",
+        },
+        sky: {
+            text: "text-sky-700",
+            bg: "bg-sky-100",
+        },
+        red: {
+            text: "text-red-700",
+            bg: "bg-red-100",
+        },
+    }[color];
+
     return (
-        <Card className="p-5">
-            <div className="text-sm text-slate-500">{title}</div>
-            <div className={`mt-2 text-3xl font-semibold ${tint}`}>{value}</div>
+        <Card className="group border-slate-200 p-5 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
+            <div className="flex items-start justify-between">
+                <div>
+                    <p className="text-sm font-medium text-slate-500">{title}</p>
+                    <p className={`mt-2 text-3xl font-bold ${styles.text}`}>{value}</p>
+                    <p className="mt-1 text-xs text-slate-400">{subtitle}</p>
+                </div>
+
+                <div className={`rounded-2xl p-3 ${styles.bg} ${styles.text} transition-transform group-hover:scale-110`}>
+                    {icon}
+                </div>
+            </div>
         </Card>
+    );
+}
+
+function EmptyChart({ text }: { text: string }) {
+    return (
+        <div className="flex min-h-[260px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
+            <BarChart3 className="h-10 w-10 text-slate-300" />
+            <p className="mt-3 text-sm font-medium text-slate-600">{text}</p>
+            <p className="mt-1 text-xs text-slate-400">
+                Os gráficos serão preenchidos conforme as movimentações forem registradas.
+            </p>
+        </div>
     );
 }
